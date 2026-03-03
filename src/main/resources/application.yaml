@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: fetchMyOffer
+
+  # 🛑 THE ULTIMATE KILL SWITCH: Banish the buggy auto-configs
+#  autoconfigure:
+#    exclude:
+#      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+#      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingAutoConfiguration
+#      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/opportunity_db
+    username: hunter
+    password: supersecret
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  ai:
+    chat:
+      client:
+        enabled: false
+
+    # 1. THE REASONING ENGINE (Groq)
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai
+      chat:
+        options:
+          model: llama-3.3-70b-versatile
+          temperature: 0.2
+
+    # 2. THE VECTOR & CHAT ENGINE (Google Gemini)
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          enabled: true
+        # Notice we removed the embedding block entirely! We will build it manually in Java.
+
+    # 3. THE MEMORY VAULT (pgvector)
+    # ==========================================
+    # 3. THE MEMORY VAULT (pgvector)
+    # ==========================================
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 768
+        initialize-schema: true
+        remove-existing-vector-store-table: true # ☢️ THE NUKE: Forces DB rebuild!
+
