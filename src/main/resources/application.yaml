@@ -58,3 +58,8 @@ spring:
         initialize-schema: true
         remove-existing-vector-store-table: false # ☢️ THE NUKE: Forces DB rebuild!
 
+# Telegram Bot Configuration
+telegram:
+  bot:
+    token: ***REMOVED***
+    chat-id: 1451392851
