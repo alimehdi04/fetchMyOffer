@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration;
 //import org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingAutoConfiguration;
 import org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 // 🛑 The Absolute Kill Switch: Physically blocks the buggy auto-configs from loading
 @SpringBootApplication(exclude = {
@@ -19,6 +20,7 @@ import org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleG
 		GoogleGenAiEmbeddingConnectionAutoConfiguration.class,
 		GoogleGenAiChatAutoConfiguration.class      // ← ADD THIS
 })
+@EnableScheduling
 public class FetchMyOfferApplication {
 
 	public static void main(String[] args) {
