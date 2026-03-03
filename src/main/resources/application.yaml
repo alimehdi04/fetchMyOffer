@@ -63,3 +63,9 @@ telegram:
   bot:
     token: ***REMOVED***
     chat-id: 1451392851
+
+# Job Hunt Scheduler (Runs at 9:00 AM every day by default)
+# Format: Second Minute Hour Day Month DayOfWeek
+job:
+  hunt:
+    cron: 0 0 9 * * ?
