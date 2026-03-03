@@ -1,7 +1,6 @@
 package com.autisheimer.fetchMyOfferMicroService.controller;
 
-
-
+import com.autisheimer.fetchMyOfferMicroService.service.JobQueryGeneratorService;
 import com.autisheimer.fetchMyOfferMicroService.service.ResumeProcessingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +11,12 @@ import org.springframework.web.multipart.MultipartFile;
 public class ProfileController {
 
     private final ResumeProcessingService resumeService;
+    private final JobQueryGeneratorService queryGeneratorService; // 🛑 Added new service
 
-    public ProfileController(ResumeProcessingService resumeService) {
+    // 🛑 Injected both services into the constructor
+    public ProfileController(ResumeProcessingService resumeService, JobQueryGeneratorService queryGeneratorService) {
         this.resumeService = resumeService;
+        this.queryGeneratorService = queryGeneratorService;
     }
 
     @PostMapping("/upload-resume")
@@ -30,5 +32,11 @@ public class ProfileController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to process resume: " + e.getMessage());
         }
+    }
+
+    // 🛑 The new endpoint to generate autonomous search queries
+    @GetMapping("/generate-queries")
+    public ResponseEntity<JobQueryGeneratorService.SearchQueries> getRecommendedQueries() {
+        return ResponseEntity.ok(queryGeneratorService.generateSearchQueries());
     }
 }
