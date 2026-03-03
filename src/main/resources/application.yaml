@@ -56,5 +56,5 @@ spring:
         distance-type: COSINE_DISTANCE
         dimensions: 768
         initialize-schema: true
-        remove-existing-vector-store-table: true # ☢️ THE NUKE: Forces DB rebuild!
+        remove-existing-vector-store-table: false # ☢️ THE NUKE: Forces DB rebuild!
 
