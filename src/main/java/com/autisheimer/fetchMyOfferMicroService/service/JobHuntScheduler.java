@@ -25,24 +25,24 @@ public class JobHuntScheduler {
         this.restClient = restClientBuilder.build();
     }
 
-    // ⏰ CRON JOB: Runs based on the property file, defaults to 9:00 AM every day
+    // CRON JOB: Runs based on the property file, defaults to 9:00 AM every day
     @Scheduled(cron = "${job.hunt.cron:0 0 9 * * ?}")
     public void triggerAutonomousJobHunt() {
-        System.out.println("\n⏰ [CRON TRIGGERED] Good Morning! Starting daily autonomous job hunt...");
+        System.out.println("\n [CRON TRIGGERED] Good Morning! Starting daily autonomous job hunt...");
 
         // 1. Ask the "Brain" what we should search for based on the resume
         JobQueryGeneratorService.SearchQueries searchData = queryGeneratorService.generateSearchQueries();
 
         if (searchData == null || searchData.queries() == null || searchData.queries().isEmpty()) {
-            System.out.println("⚠️ No queries generated. Skipping today's hunt.");
+            System.out.println(" No queries generated. Skipping today's hunt.");
             return;
         }
 
-        System.out.println("🎯 Today's Target Queries: " + searchData.queries());
+        System.out.println(" Today's Target Queries: " + searchData.queries());
 
         // 2. Send each query to the Python Scraper Worker
         for (String query : searchData.queries()) {
-            System.out.println("🚀 Dispatching Python Scraper for: " + query);
+            System.out.println(" Dispatching Python Scraper for: " + query);
 
             Map<String, Object> payload = Map.of(
                     "query", query,
@@ -58,15 +58,15 @@ public class JobHuntScheduler {
                         .retrieve()
                         .toBodilessEntity();
 
-                System.out.println("✅ Successfully triggered scraper for: " + query);
+                System.out.println(" Successfully triggered scraper for: " + query);
 
                 // Sleep for 45 seconds between requests to be polite to the target server
                 Thread.sleep(45000);
             } catch (Exception e) {
-                System.err.println("❌ Failed to trigger scraper for '" + query + "': " + e.getMessage());
+                System.err.println("Failed to trigger scraper for '" + query + "': " + e.getMessage());
             }
         }
 
-        System.out.println("💤 Daily hunt dispatched. Scheduler hibernating until tomorrow.\n");
+        System.out.println("Daily hunt dispatched. Scheduler hibernating until tomorrow.\n");
     }
 }

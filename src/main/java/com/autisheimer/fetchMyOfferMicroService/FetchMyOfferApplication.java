@@ -10,15 +10,15 @@ import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConf
 import org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-// 🛑 The Absolute Kill Switch: Physically blocks the buggy auto-configs from loading
+// Physically blocks the buggy auto-configs from loading
 @SpringBootApplication(exclude = {
 		// Block duplicate OpenAI beans
 		OpenAiEmbeddingAutoConfiguration.class,
-		OpenAiChatAutoConfiguration.class,          // ← ADD THIS
+		OpenAiChatAutoConfiguration.class,
 		// Block duplicate Gemini beans
 		GoogleGenAiTextEmbeddingAutoConfiguration.class,
 		GoogleGenAiEmbeddingConnectionAutoConfiguration.class,
-		GoogleGenAiChatAutoConfiguration.class      // ← ADD THIS
+		GoogleGenAiChatAutoConfiguration.class
 })
 @EnableScheduling
 public class FetchMyOfferApplication {

@@ -54,9 +54,8 @@ public class TelegramNotificationService {
                     .retrieve()
                     .toBodilessEntity();
 
-            System.out.println("📱 Telegram notification sent to your phone!");
         } catch (Exception e) {
-            System.err.println("❌ Failed to send Telegram notification: " + e.getMessage());
+            System.err.println("Failed to send Telegram notification: " + e.getMessage());
         }
     }
 }

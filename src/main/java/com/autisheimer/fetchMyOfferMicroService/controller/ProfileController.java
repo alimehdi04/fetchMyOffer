@@ -13,9 +13,9 @@ public class ProfileController {
 
     private final ResumeProcessingService resumeService;
     private final JobQueryGeneratorService queryGeneratorService;
-    private final JobHuntScheduler jobHuntScheduler; // 🛑 Added Scheduler
+    private final JobHuntScheduler jobHuntScheduler; //  Added Scheduler
 
-    // 🛑 Injected all three services into the constructor
+    //  Injected all three services into the constructor
     public ProfileController(ResumeProcessingService resumeService,
                              JobQueryGeneratorService queryGeneratorService,
                              JobHuntScheduler jobHuntScheduler) {
@@ -44,15 +44,15 @@ public class ProfileController {
         return ResponseEntity.ok(queryGeneratorService.generateSearchQueries());
     }
 
-    // 🛑 NEW: Manual Trigger API
+    //  NEW: Manual Trigger API
     @GetMapping("/force-hunt")
     public ResponseEntity<String> forceHunt() {
-        System.out.println("🕹️ Manual hunt initiated via API!");
+        System.out.println(" Manual hunt initiated via API!");
 
-        // We run this in a new thread so your browser doesn't sit there spinning
+        // We run this in a new thread so the browser doesn't sit there spinning
         // while it waits for the whole scraping and evaluation process to finish.
         new Thread(() -> jobHuntScheduler.triggerAutonomousJobHunt()).start();
 
-        return ResponseEntity.ok("Manual job hunt successfully triggered! Check your console for logs and Telegram for matches.");
+        return ResponseEntity.ok("Manual job hunt successfully triggered! Check Telegram for matches.");
     }
 }
