@@ -21,11 +21,11 @@ public class JobQueryGeneratorService {
         this.vectorStore = vectorStore;
     }
 
-    // 🛑 We use a Record to force Groq to return a clean JSON array
+    // We use a Record to force Groq to return a clean JSON array
     public record SearchQueries(List<String> queries) {}
 
     public SearchQueries generateSearchQueries() {
-        System.out.println("🧠 Fetching candidate profile to generate search queries...");
+        System.out.println(" Fetching candidate profile to generate search queries...");
 
         // 1. Fetch the broad context of the resume from the database
         List<Document> resumeChunks = vectorStore.similaritySearch(
@@ -57,7 +57,7 @@ public class JobQueryGeneratorService {
             {formatInstructions}
             """;
 
-        System.out.println("🤖 Asking Groq to generate optimal job titles...");
+        System.out.println(" Asking Groq to generate optimal job titles...");
 
         // 3. Ask Groq for the queries
         String jsonResponse = chatClient.prompt()
