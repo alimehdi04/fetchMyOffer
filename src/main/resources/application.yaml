@@ -2,17 +2,10 @@ spring:
   application:
     name: fetchMyOffer
 
-  # 🛑 THE ULTIMATE KILL SWITCH: Banish the buggy auto-configs
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
-#      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingAutoConfiguration
-#      - org.springframework.ai.model.google.genai.autoconfigure.embedding.GoogleGenAiEmbeddingConnectionAutoConfiguration
-
   datasource:
-    url: jdbc:postgresql://localhost:5433/opportunity_db
-    username: hunter
-    password: supersecret
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/vector_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -44,28 +37,33 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           enabled: true
-        # Notice we removed the embedding block entirely! We will build it manually in Java.
 
     # 3. THE MEMORY VAULT (pgvector)
-    # ==========================================
-    # 3. THE MEMORY VAULT (pgvector)
-    # ==========================================
     vectorstore:
       pgvector:
         index-type: HNSW
         distance-type: COSINE_DISTANCE
         dimensions: 768
         initialize-schema: true
-        remove-existing-vector-store-table: false # ☢️ THE NUKE: Forces DB rebuild!
+        remove-existing-vector-store-table: false
 
-# Telegram Bot Configuration
+# 🛑 SECURED: Telegram Bot Configuration
 telegram:
   bot:
-    token: 8437823283:AAHJHkCCKksuRhV3NkN9iA1F0GFZHkCAht8
-    chat-id: 1451392851
+    token: ${TELEGRAM_BOT_TOKEN}
+    chat-id: ${TELEGRAM_CHAT_ID}
 
 # Job Hunt Scheduler (Runs at 9:00 AM every day by default)
-# Format: Second Minute Hour Day Month DayOfWeek
 job:
   hunt:
     cron: 0 0 9 * * ?
+
+# Cloud Python Scraper URL
+scraper:
+  python:
+    url: https://scraper-fetchmyoffer.onrender.com/api/v1/scrape
+
+# Cloud Webhook URL
+webhook:
+  callback:
+    url: ${WEBHOOK_URL:http://localhost:8080/api/v1/webhooks/scrape-results}
