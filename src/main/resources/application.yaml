@@ -61,7 +61,7 @@ job:
 # Cloud Python Scraper URL
 scraper:
   python:
-    url: http://127.0.0.1:8000/api/v1/scrape
+    url: ${SCRAPER_URL}
 #    url: https://scraper-fetchmyoffer.onrender.com/api/v1/scrape
 
 # Cloud Webhook URL
