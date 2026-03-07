@@ -1,87 +1,111 @@
 package com.autisheimer.fetchMyOfferMicroService.service;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.converter.BeanOutputConverter;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class JobEvaluatorService {
 
     private final ChatClient chatClient;
-    private final VectorStore vectorStore; // Inject the memory vault!
+    private final ObjectMapper objectMapper;
 
-    // Inject both the Groq Brain and the pgvector database
-    public JobEvaluatorService(@Qualifier("groqChatClient") ChatClient chatClient, VectorStore vectorStore) {
+    public JobEvaluatorService(@Qualifier("groqChatClient") ChatClient chatClient) {
         this.chatClient = chatClient;
-        this.vectorStore = vectorStore;
+        this.objectMapper = new ObjectMapper();
     }
 
-    public record EvaluationResult(boolean isMatch, String reason) {}
+    // Record to hold the AI's response for each job
+    public record BatchEvaluationResponse(String url, boolean isMatch, String reason) {}
 
-    public EvaluationResult evaluateJob(Map<String, String> jobData) {
-        String jobTitle = jobData.get("title");
-        String jobDescription = jobData.get("description");
+    /**
+     * Master method to evaluate all jobs. It chunks them into batches of 5 to save tokens
+     * and respects Groq's Rate Limits.
+     */
+    public List<BatchEvaluationResponse> evaluateAllJobs(List<Map<String, String>> allJobs, String distilledProfileJson) {
+        List<BatchEvaluationResponse> allEvaluations = new ArrayList<>();
+        int BATCH_SIZE = 5;
 
-        System.out.println("Performing Mathematical Similarity Search for: " + jobTitle);
+        System.out.println("🧠 Evaluating " + allJobs.size() + " jobs in batches of " + BATCH_SIZE + "...");
 
-        // 1. RAG RETRIEVAL
-        List<Document> relevantResumeChunks = vectorStore.similaritySearch(
-                SearchRequest.builder().query(jobDescription).topK(3).build()
-        );
+        for (int i = 0; i < allJobs.size(); i += BATCH_SIZE) {
+            int end = Math.min(allJobs.size(), i + BATCH_SIZE);
+            List<Map<String, String>> batch = allJobs.subList(i, end);
 
-        String fetchedProfile = relevantResumeChunks.stream()
-                .map(Document::getFormattedContent)
-                .collect(Collectors.joining("\n... "));
+            // Evaluate this specific chunk of 5 jobs
+            List<BatchEvaluationResponse> batchResult = evaluateJobBatch(batch, distilledProfileJson);
+            allEvaluations.addAll(batchResult);
 
-        final String finalCandidateProfile = fetchedProfile.isBlank()
-                ? "No resume data found in the database. Please upload a resume."
-                : fetchedProfile;
+            // Throttle Groq to avoid 429 Rate Limit (Wait 8 seconds between batches)
+            if (end < allJobs.size()) {
+                try {
+                    System.out.println("⏳ Throttling AI (8 seconds) to respect Groq TPM limits...");
+                    Thread.sleep(8000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        return allEvaluations;
+    }
 
-        // Create a converter to safely map the LLM output to our Record
-        var converter = new BeanOutputConverter<>(EvaluationResult.class);
+    /**
+     * The actual AI call for a single batch of jobs.
+     */
+    private List<BatchEvaluationResponse> evaluateJobBatch(List<Map<String, String>> jobBatch, String distilledProfileJson) {
+        try {
+            // Convert the 5 jobs into a JSON string so the LLM can read them
+            String jobsJson = objectMapper.writeValueAsString(jobBatch);
 
-        String systemPrompt = """
-            You are an expert technical recruiter. 
-            Evaluate if the provided Job Opportunity is a good match for the Candidate Profile.
-            
-            Rules for matching:
-            1. If the job requires significantly more experience than the candidate has, it is NOT a match.
-            2. If the job requires completely different core technologies, it is NOT a match.
-            3. If the job aligns with the candidate's skills and experience level, it IS a match.
-            
-            Candidate Profile (Extracted from Resume):
-            {userProfile}
-            
-            {formatInstructions}
-            """;
+            String systemPrompt = String.format("""
+                You are an expert technical recruiter. 
+                Evaluate the following batch of job descriptions against the Candidate Profile.
+                
+                Rules for matching:
+                1. If the job requires significantly more experience than the candidate has, it is NOT a match.
+                2. If the job requires completely different core technologies, it is NOT a match.
+                3. If the job aligns with the candidate's skills and experience level, it IS a match.
+                
+                Candidate Profile:
+                %s
+                
+                OUTPUT FORMAT:
+                Return a STRICTLY VALID JSON ARRAY of objects. Do not include markdown formatting like ```json.
+                Each object must have exactly these keys:
+                - "url": (the exact url of the job from the input)
+                - "isMatch": (boolean, true if it fits)
+                - "reason": (string, max 10 words explaining the decision)
+                """, distilledProfileJson);
 
-        String userPrompt = """
-            Job Title: {jobTitle}
-            Job Description: {jobDescription}
-            """;
+            String userPrompt = String.format("""
+                JOB BATCH TO EVALUATE:
+                %s
+                """, jobsJson);
 
-        System.out.println("Asking Groq (Llama 3) to evaluate match...");
+            // Call Groq (Ask for raw JSON text)
+            String jsonResponse = chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(userPrompt)
+                    .call()
+                    .content();
 
-        // 2. Ask Groq for TEXT, not a strict entity, bypassing the extra_body bug!
-        String jsonResponse = chatClient.prompt()
-                .system(s -> s.text(systemPrompt)
-                        .param("userProfile", finalCandidateProfile)
-                        .param("formatInstructions", converter.getFormat())) // Inject JSON rules
-                .user(u -> u.text(userPrompt)
-                        .param("jobTitle", jobTitle)
-                        .param("jobDescription", jobDescription))
-                .call()
-                .content(); // Ask for raw text!
+            // Clean the response (Groq sometimes wraps JSON in markdown tags)
+            if (jsonResponse != null && jsonResponse.startsWith("```json")) {
+                jsonResponse = jsonResponse.replace("```json", "").replace("```", "").trim();
+            }
 
-        // 3. Convert the safe JSON text into our Java Record
-        return converter.convert(jsonResponse);
+            // Convert the JSON array back into Java objects
+            return objectMapper.readValue(jsonResponse, new TypeReference<List<BatchEvaluationResponse>>() {});
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to evaluate batch: " + e.getMessage());
+            return new ArrayList<>(); // Return empty list on failure to prevent crashing the loop
+        }
     }
 }
