@@ -58,8 +58,10 @@ public class ResumeProcessingService {
             
             Rules:
             1. Extract the core education, tech stack, and roles the candidate is seeking.
-            2. Infer 3-4 strict 'rejectCriteria' (e.g., "Requires 3+ years experience", "Non-technical role").
-            3. Generate exactly 3 highly optimized search queries for job boards (e.g. Internshala/Naukri) based on their skills. Keep queries under 4 words.
+            2. Evaluate the candidate's 'experienceLevel' based on chronological history (e.g., "3rd-year student graduating May 2027 with 11 months of total internship experience").
+            3. Determine exactly what they are 'eligibleFor' (e.g., ["Summer Internships", "Co-ops", "New-Grad 2027 Roles"]). Do NOT include immediate full-time jobs if they are still a student.
+            4. Infer 3-4 strict 'rejectCriteria' focusing heavily on experience mismatches (e.g., "Requires 2+ years full-time experience", "Requires immediate full-time joining", "Senior/Lead roles").
+            5. Generate exactly 3 highly optimized search queries for job boards (e.g. Internshala/Naukri) based on their skills. Keep queries under 4 words.
             """;
 
         // Spring AI automatically forces the LLM to output JSON matching our Record!
