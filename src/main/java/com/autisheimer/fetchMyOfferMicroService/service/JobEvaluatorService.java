@@ -80,7 +80,7 @@ public class JobEvaluatorService {
                 Each object must have exactly these keys:
                 - "url": (the exact url of the job from the input)
                 - "isMatch": (boolean, true if it fits)
-                - "reason": (string, max 10 words explaining the decision)
+                - "reason": (string, Write a concise, 2-sentence explanation of why this job is a match. Explicitly name the overlapping skills and confirm it aligns with the candidate's current experience level. Keep it punchy, direct, and avoid generic introductory filler. DO NOT write 1-liners.)
                 """, distilledProfileJson);
 
             String userPrompt = String.format("""

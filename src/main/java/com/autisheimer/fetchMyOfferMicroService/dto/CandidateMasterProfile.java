@@ -8,6 +8,8 @@ public record CandidateMasterProfile(
 ) {
     public record DistilledProfile(
             String education,
+            String experienceLevel,
+            List<String> eligibleFor,
             List<String> coreSkills,
             List<String> seekingRoles,
             List<String> rejectCriteria
